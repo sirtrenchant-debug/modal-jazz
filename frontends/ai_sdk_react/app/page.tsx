@@ -1,4 +1,232 @@
 "use client";
+
+import { useChat } from "@ai-sdk/react";
+import { useEffect, useRef } from "react";
+import ReactMarkdown, { type Components } from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeHighlight from "rehype-highlight";
+
+const SUGGESTIONS = [
+  "Explain how Transformers work.",
+  "Write five different programs for me in both Python and Rust.",
+  "What is Modal and how does it work?",
+];
+
+const markdownComponents: Components = {
+  code({ className, children, ...props }) {
+    const isBlock = className?.startsWith("hljs");
+    if (isBlock) {
+      return (
+        <code className={className} {...props}>
+          {children}
+        </code>
+      );
+    }
+    return (
+      <code
+        className="bg-green-dim text-green-bright px-1.5 py-0.5 rounded text-xs font-mono"
+        {...props}
+      >
+        {children}
+      </code>
+    );
+  },
+  a({ children, ...props }) {
+    return (
+      <a target="_blank" rel="noopener noreferrer" {...props}>
+        {children}
+      </a>
+    );
+  },
+};
+
+function MarkdownContent({ children }: { children: string }) {
+  return (
+    <div className="prose prose-xs sm:prose-sm prose-invert max-w-none">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeHighlight]}
+        components={markdownComponents}
+      >
+        {children}
+      </ReactMarkdown>
+    </div>
+  );
+}
+
+function EmptyState({ onSend }: { onSend: (text: string) => void }) {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center px-4 gap-6">
+      <h2 className="text-3xl sm:text-4xl font-light text-green-bright py-4">
+        Modal Jazz
+      </h2>
+      <p className="text-text-primary/50 text-sm">Ask me anything.</p>
+      <div className="flex flex-wrap justify-center gap-2 max-w-lg">
+        {SUGGESTIONS.map((s) => (
+          <button
+            key={s}
+            onClick={() => onSend(s)}
+            className="rounded-full border border-border px-4 py-2 text-sm text-text-primary/70 hover:border-green-bright/40 hover:text-green-bright hover:bg-green-dim transition-all cursor-pointer"
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ThinkingIndicator() {
+  return (
+    <div className="flex justify-start">
+      <div className="bg-bg-container rounded-2xl px-5 py-4 max-w-[85%]">
+        <div className="flex items-center gap-1.5">
+          {[0, 1, 2].map((i) => (
+            <span
+              key={i}
+              className="block w-2 h-2 rounded-full bg-green-bright"
+              style={{
+                animation: "pulse-dot 1.4s ease-in-out infinite",
+                animationDelay: `${i * 0.2}s`,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MessageBubble({
+  message,
+  isStreaming,
+}: {
+  message: any; // Using any to avoid strict type issues with toolInvocations vs parts for now
+  isStreaming: boolean;
+}) {
+  const isUser = message.role === "user";
+
+  return (
+    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+      <div
+        className={`rounded-2xl px-4 py-3 sm:px-5 sm:py-4 ${isUser ? "bg-green-dim" : "bg-bg-container"
+          } ${isUser ? "max-w-[95%] sm:max-w-[85%]" : "w-[95%] sm:w-[85%]"}
+        `}
+      >
+        {!isUser && (
+          <span className="block text-xs text-green-bright/70 font-medium mb-2">
+            Assistant
+          </span>
+        )}
+
+        {/* Handle tool invocations matching 'webSearch' */}
+        {message.toolInvocations?.map((toolInvocation: any) => {
+          const { toolName, toolCallId, state } = toolInvocation;
+
+          if (toolName === "webSearch") {
+            return (
+              <details
+                key={toolCallId}
+                className="my-2 border border-border rounded-xl overflow-hidden"
+              >
+                <summary className="px-3 py-2 text-xs text-green-bright/70 font-medium cursor-pointer hover:bg-green-dim transition-colors">
+                  Web Search {state !== "result" && " (searching...)"}
+                </summary>
+                <div className="px-3 py-2 text-xs text-text-primary/80 border-t border-border">
+                  {state === "result" ? (
+                    <div className="space-y-2">
+                      {toolInvocation.result?.results?.map(
+                        (result: any, idx: number) => (
+                          <div
+                            key={idx}
+                            className="border-l-2 border-green-dim pl-2"
+                          >
+                            <a
+                              href={result.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-green-bright hover:underline font-medium block"
+                            >
+                              {result.title}
+                            </a>
+                            <div className="text-text-primary/60 text-xs mt-1 line-clamp-3">
+                              {result.content}
+                            </div>
+                          </div>
+                        )
+                      )}
+                      {!toolInvocation.result?.results?.length && (
+                        <div className="text-text-primary/50 italic">
+                          No results found
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="italic text-text-primary/50">
+                      Searching for: {toolInvocation.args?.query}
+                    </div>
+                  )}
+                </div>
+              </details>
+            );
+          }
+          return null;
+        })}
+
+        {/* Regular text content */}
+        {message.content && (
+          isUser ? (
+            <p className="whitespace-pre-wrap text-xs sm:text-sm leading-relaxed">
+              {message.content}
+            </p>
+          ) : (
+            <div className="text-xs sm:text-sm leading-relaxed">
+              <MarkdownContent>{message.content}</MarkdownContent>
+              {isStreaming && (
+                <span className="inline-block w-2 h-4 ml-0.5 bg-green-bright/80 rounded-sm animate-pulse align-middle" />
+              )}
+            </div>
+          )
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function Chat() {
+  const { messages, append, status, input, setInput } = useChat();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const isLoading = status === "submitted" || status === "streaming";
+
+  // Auto-resize textarea
+  useEffect(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    ta.style.height = "auto";
+    ta.style.height = Math.min(ta.scrollHeight, 200) + "px";
+  }, [input]);
+
+  // Auto-scroll on new messages
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) {
+      el.scrollTop = el.scrollHeight;
+    }
+  }, [messages, status]);
+
+  function handleSend(text: string) {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    append({ role: "user", content: trimmed });
+    setInput("");
+  }
+
+  const hasMessages = messages.length > 0;
+
+  return (
+    <div className="flex-1 flex flex-col min-h-0">
       {/* Messages area */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto">
         {!hasMessages ? (
@@ -11,7 +239,7 @@
                 message={m}
                 isStreaming={
                   status === "streaming" &&
-                  m === messages[messages.length - 1] &&
+                  m.id === messages[messages.length - 1].id &&
                   m.role === "assistant"
                 }
               />
@@ -20,7 +248,6 @@
           </div>
         )}
       </div>
-
 
       {/* Input area */}
       <div className="border-t border-border">
