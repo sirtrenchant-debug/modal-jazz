@@ -1,33 +1,33 @@
 {
-    "name": "ai-sdk-react-chat",
-    "private": true,
-    "scripts": {
-          "dev": "next dev",
-          "build": "next build",
-          "start": "next start",
-          "preview": "vercel deploy",
-          "deploy": "vercel deploy --prod"
-    },
-    "dependencies": {
-          "@ai-sdk/openai-compatible": "^0.1.0",
-          "@ai-sdk/react": "^4.1.0",
-          "@tavily/core": "^0.7.1",
-          "ai": "^4.1.0",
-          "next": "^15",
-          "react": "^19",
-          "react-dom": "^19",
-          "react-markdown": "^10.1.0",
-          "rehype-highlight": "^7.0.2",
-          "remark-gfm": "^4.0.1"
-    },
-    "devDependencies": {
-          "@tailwindcss/postcss": "^4.1.18",
-          "@tailwindcss/typography": "^0.5.19",
-          "@types/node": "^22",
-          "@types/react": "^19",
-          "postcss": "^8.5.6",
-          "tailwindcss": "^4.1.18",
-          "typescript": "^5",
-          "vercel": "^50.9.6"
-    }
+      "name": "ai-sdk-react-chat",
+      "private": true,
+      "scripts": {
+              "dev": "next dev",
+              "build": "next build",
+              "start": "next start",
+              "preview": "vercel deploy",
+              "deploy": "vercel deploy --prod"
+      },
+      "dependencies": {
+              "@ai-sdk/openai-compatible": "^0.0.3",
+              "@ai-sdk/react": "^3.1.0",
+              "@tavily/core": "^0.7.1",
+              "ai": "^3.4.15",
+              "next": "^15",
+              "react": "^19",
+              "react-dom": "^19",
+              "react-markdown": "^10.1.0",
+              "rehype-highlight": "^7.0.2",
+              "remark-gfm": "^4.0.1"
+      },
+      "devDependencies": {
+              "@tailwindcss/postcss": "^4.0.0",
+              "@tailwindcss/typography": "^0.5.15",
+              "@types/node": "^22",
+              "@types/react": "^19",
+              "postcss": "^8.4.49",
+              "tailwindcss": "^4.0.0",
+              "typescript": "^5",
+              "vercel": "^39.2.4"
+      }
 }
